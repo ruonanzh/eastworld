@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI):
         # getLogger returns the same singleton everywhere, so usages in
         # controllers should log to this stdout stream handler as well
         logger = logging.getLogger()
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler()
         logger.addHandler(handler)
 

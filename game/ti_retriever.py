@@ -35,6 +35,12 @@ class TIRetriever:
         )
         self._memory_importances: NDArray[np.float64] = np.zeros(10)
 
+    def get_memory_of(self, index: int) -> Memory:
+        return self._memories[index]
+    
+    def get_all_memory(self) -> List[Memory]:
+        return self._memories
+
     def get_relevant_memories(
         self, query: Memory, top_k: int
     ) -> List[Tuple[Memory, float]]:

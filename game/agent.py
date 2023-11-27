@@ -1,5 +1,8 @@
+import logging
 import asyncio
 from typing import List, Optional, Tuple, Union
+import re
+import numpy as np
 
 from pydantic import UUID4
 
@@ -16,6 +19,9 @@ from game.prompt_helpers import (
     rating_to_int,
 )
 from llm.base import LLMBase
+
+#from openai.embeddings_utils import cosine_similarity
+
 from schema import ActionCompletion, Conversation, Knowledge, Memory, Message
 
 
@@ -78,11 +84,16 @@ class GenAgent:
             memories,
             self._conversation_history,
         )
+
+        self._debugMessage(messages)
+
         functions = generate_functions_from_actions(self._knowledge.agent_def.actions)
         completion = await self._llm_interface.completion(messages, functions)
 
         if isinstance(completion, Message):
             self._conversation_history.append(clean_response(self.name, completion))
+            # process each message in messages
+            # completion.content = await self._processMessage(completion.content)
 
         return completion, messages
 
@@ -99,6 +110,8 @@ class GenAgent:
         )
 
         completion = await self._llm_interface.chat_completion(messages)
+        # process each message in messages
+        # completion.content = await self._processMessage(completion.content)
 
         self._conversation_history.append(clean_response(self.name, completion))
         return completion, messages
@@ -171,6 +184,85 @@ class GenAgent:
         )
 
         return rating_to_int(completion)
+    
+    async def _processMessage(
+            self,
+            content:str
+        ):
+        # TODO: this is a hacky way to do this, but it works for now
+        sentances = re.split(r'([,.I?，。！？])', content)
+        # sentances:List[str] = []
+        # sentances.append(content)
+
+        for msg in sentances:
+
+            # msg is too short to be a meanning full sentance
+            if len(msg) <= 3:
+                continue
+
+            logger = logging.getLogger()
+            logger.debug('Sentence:' + msg)
+            #get embed of this msg from llm
+            msg_embed = await self._llm_interface.embed(msg)
+
+            retrived_memories:List[Memory] = []
+            retrived_memories = await self._memory.retrieve_relevant_memories(
+                [Memory(description=msg, embedding=msg_embed)], 
+                self._conversation_context.memories_to_include
+                )
+
+            for memory in retrived_memories:
+
+                if memory.embedding is None:
+                    memory.embedding = await self._llm_interface.embed(memory.description)
+
+                similarity = self._cosineSimilarity(memory.embedding, msg_embed)
+                distance = self._distanceFromEmbedding(memory.embedding, msg_embed)
+
+                loreID = ""
+                if memory.client_id is not None:
+                    loreID = memory.client_id
+
+                logger.debug('LoreID ' + loreID + ':' + memory.description + ' Similarity:' + str(similarity) + ' Distance:' + str(distance))
+                #if(similarity > 0.95):
+                #    msg = '<LORE ' + 'ID=' + lore.client_id + ' >' + msg + '</LORE>'
+                #    break
+
+        return content
+    
+    def _distanceFromEmbedding(self, memory:Optional[List[float]] = None, message:Optional[List[float]] = None):
+        if memory is None:
+            logger = logging.getLogger()
+            logger.warn("memory embedding is None")
+            return 0
+        
+        if message is None:
+            logger = logging.getLogger()
+            logger.warn("message embedding is None")
+            return 0
+        
+        return np.linalg.norm(np.subtract(memory, message))
+    
+    def _cosineSimilarity(self, memory:Optional[List[float]] = None, message:Optional[List[float]] = None):
+
+        if memory is None:
+            logger = logging.getLogger()
+            logger.warn("memory embedding is None")
+            return 0
+        
+        if message is None:
+            logger = logging.getLogger()
+            logger.warn("message embedding is None")
+            return 0
+
+        return np.dot(memory, message) / (np.linalg.norm(memory) * np.linalg.norm(memory))
+    
+    def _debugMessage(self, msg:List[Message]):
+        logger = logging.getLogger()
+        logger.debug("GPT Message:")
+        for m in msg:
+            logger.debug("Role:" + m.role)
+            logger.debug("Content:" + m.content)
 
     def startConversation(
         self,
@@ -196,17 +288,21 @@ class GenAgent:
             max_memories = self._conversation_context.memories_to_include
 
         queries: List[Memory] = []
+
+        context_description = None
+
         if message:
             queries.append(Memory(description=message))
-        context_description = (self._conversation_context.scene_description or "") + (
+            context_description = (self._conversation_context.scene_description or "") + (
             self._conversation_context.instructions or ""
         )
+            
         if context_description:
             queries.append(Memory(description=context_description))
 
-        return [
-            memory.description
-            for memory in await self._memory.retrieve_relevant_memories(
-                queries, top_k=max_memories
-            )
-        ]
+        return await self._memory.retrieve_relevant_memories(queries, top_k=max_memories)
+        
+    async def _queryMemoriesDesc(
+            self, message: Optional[str] = None, max_memories: Optional[int] = None
+    ):
+        return [ memory.description for memory in await  self._queryMemories() ]

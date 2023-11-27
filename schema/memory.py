@@ -44,12 +44,12 @@ class Memory(BaseModel):
     A number from 1-10 indicating the importance of the memory. An importance of 0 
     means importance will be determined by the LLM.
     """
-
+    client_id: Optional[str] = None 
     description: str
     embedding: Optional[List[float]] = None
     timestamp: Optional[GameStage] = None
 
-
 class Lore(BaseModel):
+    client_id: str = ""
     known_by: Set[UUID4] = Field(default_factory=set)
     memory: Memory

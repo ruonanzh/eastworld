@@ -1,11 +1,14 @@
 from typing import Dict, List, Optional
 
-from schema import Action, ActionCompletion, Conversation, Knowledge, Message, Parameter
+from schema import Action, ActionCompletion, Conversation, Knowledge, Message, Parameter, Memory
 
 
 def get_knowledge_fragment(
-    knowledge: Knowledge, conversation: Conversation, facts: List[str]
+    knowledge: Knowledge, conversation: Conversation, memories: List[Memory]
 ) -> str:
+    
+    memory_fragment: List[str] = []
+
     fragment = [
         """You are roleplaying as a character named {knowledge.agent_def.name}.
 Description of {knowledge.agent_def.name}: 
@@ -26,10 +29,21 @@ Description of {knowledge.agent_def.name}:
 {knowledge.agent_def.example_speech}"""
         )
 
-    if facts:
+    if memories:
         fragment.append(
-            "{knowledge.agent_def.name} has the following memories: \n{facts}"
+            "{knowledge.agent_def.name} has the following memories: \n{Memories}"
         )
+        for memory in memories:
+            memory_fragment.append(
+                """{memory.description}[memory_id]{memory.client_id}[/memory_id]\n"""
+                .format(
+                    memory=memory
+                )
+            )
+        fragment.append(
+             """\nEvery memory has an memory ID between [memory_id] and [/memory_id]. \
+You can reference a memory by its ID in your responses. If you reference a memory, you must add the \
+memory ID at the end of the sentence.""")
 
     if conversation.correspondent:
         fragment.append(
@@ -49,7 +63,7 @@ Description of {knowledge.agent_def.name}:
     return "\n\n".join(
         [
             piece.format(
-                knowledge=knowledge, conversation=conversation, facts="\n".join(facts)
+                knowledge=knowledge, conversation=conversation, Memories="\n".join(memory_fragment)
             )
             for piece in fragment
         ]
@@ -57,9 +71,9 @@ Description of {knowledge.agent_def.name}:
 
 
 def get_system_prompt(
-    knowledge: Knowledge, conversation: Conversation, facts: List[str]
+    knowledge: Knowledge, conversation: Conversation, memories: List[Memory]
 ) -> Message:
-    system_prompt = get_knowledge_fragment(knowledge, conversation, facts)
+    system_prompt = get_knowledge_fragment(knowledge, conversation, memories)
 
     instructions: List[str] = []
     instructions.append(
@@ -74,12 +88,13 @@ Do not offer information that is irrelevant to the current conversation.
         """NEVER mention you are an AI language model. You MUST stay in character and \
 respond ONLY as {knowledge.agent_def.name}."""
     )
+
     system_prompt += "\n".join(instructions)
 
     return Message(
         role="system",
         content=system_prompt.format(
-            knowledge=knowledge, conversation=conversation, facts=facts
+            knowledge=knowledge, conversation=conversation, memorys=memories
         ),
     )
 
@@ -91,11 +106,11 @@ _CHARACTER_INTERACT_PREPEND = "{character} says:"
 def get_chat_messages(
     knowledge: Knowledge,
     conversation: Conversation,
-    facts: List[str],
+    memories: List[Memory],
     history: List[Message],
 ) -> List[Message]:
     return (
-        [get_system_prompt(knowledge, conversation, facts)]
+        [get_system_prompt(knowledge, conversation, memories)]
         + _format_history(knowledge, conversation, history)
         + [
             Message(
@@ -111,11 +126,11 @@ def get_chat_messages(
 def get_interact_messages(
     knowledge: Knowledge,
     conversation: Conversation,
-    facts: List[str],
+    memories: List[Memory],
     history: List[Message],
 ) -> List[Message]:
     return (
-        [get_system_prompt(knowledge, conversation, facts)]
+        [get_system_prompt(knowledge, conversation, memories)]
         + _format_history(knowledge, conversation, history)
         + [
             Message(
@@ -131,11 +146,11 @@ def get_interact_messages(
 def get_action_messages(
     knowledge: Knowledge,
     conversation: Conversation,
-    facts: List[str],
+    memories: List[Memory],
     history: List[Message],
 ) -> List[Message]:
     return (
-        [get_system_prompt(knowledge, conversation, facts)]
+        [get_system_prompt(knowledge, conversation, memories)]
         + _format_history(knowledge, conversation, history)
         + [Message(role="system", content="You must return a function call.")]
     )
@@ -178,7 +193,7 @@ def clean_response(agent_name: str, message: Message) -> Message:
 def get_query_messages(
     knowledge: Knowledge,
     conversation: Conversation,
-    facts: List[List[str]],
+    memories: List[List[Memory]],
     history: List[Message],
     queries: List[str],
 ) -> List[List[Message]]:
@@ -191,7 +206,7 @@ thoughts. Despite what {knowledge.agent_def.name} may be saying, {query}?
         query = queries[index]
         base_message = Message(
             role="system",
-            content=get_knowledge_fragment(knowledge, conversation, facts[index]),
+            content=get_knowledge_fragment(knowledge, conversation, memories[index]),
         )
 
         name = (

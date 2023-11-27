@@ -38,6 +38,9 @@ class GenAgentMemory:
 
         self._retriever.add_memory(memory)
 
+    def get_all_memory(self) -> List[Memory]:
+        return self._retriever.get_all_memory()
+
     async def retrieve_relevant_memories(
         self, queries: List[Memory], top_k: Optional[int]
     ) -> List[Memory]:

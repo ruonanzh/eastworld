@@ -47,6 +47,14 @@ export default function GameLore(props: GameLoreProps) {
     });
   };
 
+  const handleClintIDChange = (index: number, newClientID: string) => {
+    setSharedLore(oldItems => {
+      const newItems = [...oldItems];
+      newItems[index].client_id = newClientID;
+      return newItems;
+    });
+  }
+
   const handleDescriptionChange = (index: number, newDescription: string) => {
     setSharedLore(oldItems => {
       const newItems = [...oldItems];
@@ -170,6 +178,16 @@ export default function GameLore(props: GameLoreProps) {
             loreIndicesToDisplay.has(index) && (
               <Card width={"100%"} key={index}>
                 <CardBody>
+                  <Editable
+                      width={"full"}
+                      height="max-content"
+                      value={lore.client_id}
+                      onChange = {value => handleClintIDChange(index, value)}
+                      onSubmit={() => props.handleSave(sharedLore)}
+                  >
+                      <ColoredPreview minHeight={10} />
+                      <EditableTextarea value={lore.client_id} />
+                  </Editable>
                   <HStack marginBottom={5}>
                     <Editable
                       width={"full"}

@@ -15,7 +15,7 @@ class OpenAIInterface(LLMBase):
     def __init__(
         self,
         api_key: str = "",
-        model: str = "gpt-3.5-turbo",
+        model: str = "gpt-4",
         embedding_size: int = 1536,
         api_base: Optional[str] = None,
         client_session: Optional[ClientSession] = None,
