@@ -165,7 +165,7 @@ def get_sessions_list(
     - **session_uuids** (List[uuid4] as List[str]): the uuids of the sessions
     """
     return [
-        session.uuid
+        str(session.uuid)
         for session in sessions.values()
         if str(session.game_def.uuid) == game_uuid
     ]
