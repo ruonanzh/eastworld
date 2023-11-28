@@ -43,7 +43,7 @@ Description of {knowledge.agent_def.name}:
         fragment.append(
              """\nEvery memory has an memory ID between [memory_id] and [/memory_id]. \
 You can reference a memory by its ID in your responses. If you reference a memory, you must add the \
-memory ID at the end of the sentence.""")
+memory ID at the end of the sentence and between [memory_id] and [/memory_id].""")
 
     if conversation.correspondent:
         fragment.append(
