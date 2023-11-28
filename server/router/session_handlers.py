@@ -122,7 +122,6 @@ async def create_session(
 
     set_lore_coroutines: List[Awaitable[None]] = []
     for shared_lore in game_def.shared_lore:
-        shared_lore.memory.client_id = shared_lore.client_id
         set_lore_coroutines.append(lore_task(shared_lore))
 
     await asyncio.gather(*set_lore_coroutines)

@@ -6,6 +6,7 @@
 import type { GameStage } from './GameStage';
 
 export type Memory = {
+    client_id?: string;
     importance?: number;
     description: string;
     embedding?: Array<number>;

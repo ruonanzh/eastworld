@@ -50,9 +50,16 @@ export default function GameLore(props: GameLoreProps) {
   const handleClintIDChange = (index: number, newClientID: string) => {
     setSharedLore(oldItems => {
       const newItems = [...oldItems];
-      newItems[index].client_id = newClientID;
+      newItems[index].memory.client_id = newClientID;
       return newItems;
     });
+  }
+
+  const handleNullCheck = (value: string | undefined) => {
+    if (value === undefined || value === null) {
+      return "";
+    }
+    return value;
   }
 
   const handleDescriptionChange = (index: number, newDescription: string) => {
@@ -181,12 +188,12 @@ export default function GameLore(props: GameLoreProps) {
                   <Editable
                       width={"full"}
                       height="max-content"
-                      value={lore.client_id}
+                      value={handleNullCheck(lore.memory.client_id)}
                       onChange = {value => handleClintIDChange(index, value)}
                       onSubmit={() => props.handleSave(sharedLore)}
                   >
                       <ColoredPreview minHeight={10} />
-                      <EditableTextarea value={lore.client_id} />
+                      <EditableTextarea value={handleNullCheck(lore.memory.client_id)} />
                   </Editable>
                   <HStack marginBottom={5}>
                     <Editable
