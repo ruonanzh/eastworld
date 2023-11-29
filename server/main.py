@@ -5,7 +5,8 @@ import pickle
 from contextlib import asynccontextmanager
 from typing import List
 
-from aiohttp import ClientSession
+#from aiohttp import ClientSession
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter  # type: ignore
@@ -51,9 +52,10 @@ async def lifespan(app: FastAPI):
     google_sso = generate_google_sso(parser=parser)
     github_sso = generate_github_sso(parser=parser)
 
-    openai_http_client = ClientSession()
+    openai_http_client = httpx.AsyncClient()
+    #openai_http_client = ClientSession()
     llm = OpenAIInterface(
-        api_key=key,
+        user_api_key=key,
         model=chat_model,
         api_base=api_base,
         embedding_size=embedding_size,
@@ -91,13 +93,14 @@ async def lifespan(app: FastAPI):
         "google_sso": google_sso,
         "github_sso": github_sso,
     }
+    
+    await openai_http_client.aclose()
 
     if dev_mode:
         await redis_client.set("sessions", pickle.dumps(sessions))
 
+    
     await redis_client.close()
-    await openai_http_client.close()
-
 
 def get_redis(request: Request):
     return request.state.redis_client

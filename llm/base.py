@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from schema import ActionCompletion, Message
 
@@ -7,7 +7,7 @@ from schema import ActionCompletion, Message
 class LLMBase:
     @abstractmethod
     async def completion(
-        self, messages: List[Message], functions: List[Dict[str, str]]
+        self, messages: List[Message], functions: List[Any]
     ) -> Union[Message, ActionCompletion]:
         """Returns a chat or action completion from the LLM."""
 

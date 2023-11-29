@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from schema import Action, ActionCompletion, Conversation, Knowledge, Message, Parameter, Memory
 
@@ -261,6 +261,31 @@ def generate_functions_from_actions(actions: List[Action]) -> List[Dict[str, str
         }
 
     return functions
+
+#Generate list of tools for OpenAI function call
+def generate_tools_from_actions(actions: List[Action]) -> List[Any]:
+    return [{
+        "type":"function",
+        "function":{
+            "name":action.name,
+            "description":action.description,
+            "parameters":[
+                {
+                    "type":"object",
+                    "properties":
+                    {
+                        p.name:{
+                            "type":p.type,
+                            "description":p.description,
+                            "enum":p.enum ,
+                        }
+                    },
+                } for p in action.parameters
+            ]
+            },
+}   for action in actions]
+  
+    
 
 
 _RATING_ENUM_MAP: Dict[str, int] = {

@@ -10,6 +10,7 @@ from game.memory import GenAgentMemory
 from game.prompt_helpers import (
     clean_response,
     generate_functions_from_actions,
+    generate_tools_from_actions,
     get_action_messages,
     get_chat_messages,
     get_guardrail_query,
@@ -87,8 +88,8 @@ class GenAgent:
 
         self._debugMessage(messages)
 
-        functions = generate_functions_from_actions(self._knowledge.agent_def.actions)
-        completion = await self._llm_interface.completion(messages, functions)
+        tools = generate_tools_from_actions(self._knowledge.agent_def.actions)
+        completion = await self._llm_interface.completion(messages, tools)
 
         if isinstance(completion, Message):
             self._conversation_history.append(clean_response(self.name, completion))
