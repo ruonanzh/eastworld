@@ -173,21 +173,12 @@ def get_sessions_list(
         "/Clear", operation_id="clear_sessions", dependencies=[Depends(authenticate)]
 )
 def clear_sessions(
-    game_uuid: str,
     sessions: SessionsType = Depends(get_sessions),
 ):
-    """Clears all active sessions for a given Game.
-
-    <h3>Args:</h3>
-
-    - **game_uuid** (uuid4 as str): The uuid of the GameDef
-
-    <h3>Returns:</h3>
-    - **session_uuids** (List[uuid4] as List[str]): the uuids of the sessions
-    """
-    for session in sessions.values():
-        if str(session.game_def.uuid) == game_uuid:
-            del sessions[session.uuid]
+    """Clears all active sessions for a given Game."""
+    
+    sessions.clear()
+    
 
 @router.get(
     "/{session_uuid}/active", operation_id="is_session_active", response_model=bool
