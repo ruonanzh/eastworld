@@ -14,6 +14,10 @@ import {
   Heading,
   IconButton,
   Tooltip,
+  Tag,
+  TagLabel,
+  TagCloseButton,
+  Input,
 } from "@chakra-ui/react";
 import { AddIcon, InfoIcon } from "@chakra-ui/icons";
 import { useState, useEffect, useCallback } from "react";
@@ -32,6 +36,7 @@ export default function GameLore(props: GameLoreProps) {
   const [loreIndicesToDisplay, setLoreIndicesToDisplay] = useState(
     new Set<number>(),
   );
+  const [tempTagTexts, setTempTagTexts] = useState<string[]>([]);
 
   const agentUuidToName = (uuid: string) => {
     const agent = props.agents.find(a => a.uuid === uuid);
@@ -89,6 +94,30 @@ export default function GameLore(props: GameLoreProps) {
     setFilteredAgents(newFilteredAgents);
   };
 
+  const handleAddTag = (index: number, tag: string) => {
+    setSharedLore(oldItems => {
+      const newItems = [...oldItems];
+      if(newItems[index].memory.keywords === undefined || newItems[index].memory.keywords === null) {
+        newItems[index].memory.keywords = [];
+      }
+      newItems[index].memory.keywords?.push(tag);
+      
+      props.handleSave(newItems);
+      return newItems;
+    });
+  }
+
+  const handleDeleteTag = (index: number, tagIndex: number) => {
+    setSharedLore(oldItems => {
+      const newItems = [...oldItems];
+      newItems[index].memory.keywords?.splice(tagIndex, 1);
+
+      props.handleSave(newItems);
+      return newItems;
+    });
+  }
+ 
+
   const showSharedLore = useCallback((lore: Lore, agents: AgentDef[]) => {
     return agents
       .map(agent => agent.uuid)
@@ -106,7 +135,7 @@ export default function GameLore(props: GameLoreProps) {
     });
 
     setLoreIndicesToDisplay(newIndicesSet);
-  }, [showSharedLore, sharedLore, filteredAgents]);
+  }, [showSharedLore, sharedLore, filteredAgents, tempTagTexts]);
 
   return (
     <>
@@ -250,6 +279,32 @@ export default function GameLore(props: GameLoreProps) {
                     }
                     closeMenuOnSelect={false}
                   ></Select>
+                  <HStack spacing={4} marginTop={5}>
+                    {lore.memory.keywords?.map((keyword, keywordIndex) => (
+                      <Tag key={keywordIndex} size="md" variant="solid" colorScheme="purple">
+                        <TagLabel>{keyword}</TagLabel>
+                        <TagCloseButton onClick={() => handleDeleteTag(index,keywordIndex)} />
+                      </Tag>
+                    ))}
+                  </HStack>
+                    
+                  <Input marginTop={5} value ={tempTagTexts[index]} placeholder='Add Keyword' size='md' 
+                      
+                      onChange={ e => {
+                        const newTempTagTexts = [...tempTagTexts];
+                        newTempTagTexts[index] = e.target.value;
+                        setTempTagTexts(newTempTagTexts);
+                        }
+                      }
+
+                      onKeyDown={ e=> {
+                        if(e.key === 'Enter') 
+                        {
+                          handleAddTag(index, tempTagTexts[index]);
+                          tempTagTexts[index]='';
+                        }
+                      }
+                  }/> 
                 </CardBody>
               </Card>
             ),

@@ -9,6 +9,7 @@ export type Memory = {
     client_id?: string;
     importance?: number;
     description: string;
+    keywords?: Array<string>;
     embedding?: Array<number>;
     timestamp?: GameStage;
 };
