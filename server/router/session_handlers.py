@@ -1,7 +1,11 @@
 import asyncio
 import uuid
 from configparser import ConfigParser
-from typing import Awaitable, List, Optional
+from typing import (
+    Awaitable, 
+    List, 
+    Optional,
+)
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import UUID4
@@ -122,10 +126,12 @@ async def create_session(
 
     set_lore_coroutines: List[Awaitable[None]] = []
     for shared_lore in game_def.shared_lore:
+        #shared_lore.memory.embedding = await llm.embed(shared_lore.memory.description)
         set_lore_coroutines.append(lore_task(shared_lore))
 
     await asyncio.gather(*set_lore_coroutines)
 
+    #agents : List[GenAgent] = []
     awaitable_agents: List[Awaitable[GenAgent]] = []
     for agent_def in game_def.agents:
         knowledge = Knowledge(
@@ -141,6 +147,7 @@ async def create_session(
         )
 
         awaitable_agents.append(GenAgent.create(knowledge, llm, memory))
+        #agents.append(await GenAgent.create(knowledge, llm, memory))
 
     agents = await asyncio.gather(*awaitable_agents)
     session = Session(uuid=uuid.uuid4(), game_def=game_def, agents=agents)

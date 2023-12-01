@@ -35,15 +35,19 @@ Description of {knowledge.agent_def.name}:
         )
         for memory in memories:
             memory_fragment.append(
-                """{memory.description}[memory_id]{memory.client_id}[/memory_id]\n"""
+                """{memory.description}[memory_id]{memory.client_id}[/memory_id]\
+[keywords]{keywords}[/keywords]"""
+
                 .format(
-                    memory=memory
+                    memory=memory, keywords=",".join(memory.keywords) if memory.keywords else ""
                 )
             )
         fragment.append(
              """\nEvery memory has an memory ID between [memory_id] and [/memory_id]. \
-You can reference a memory by its ID in your responses. If you reference a memory, you must add the \
-memory ID at the end of the sentence and between [memory_id] and [/memory_id].""")
+Eveny memory has a list of keywords between [keywords] and [/keywords].\
+You can reference a memory by its ID in your responses. If you reference a memory, you must do following things:\
+1. You must add the memory ID at the end of the sentence and between [memory_id] and [/memory_id].\
+2. You must use exact keywords without any change of the memory in your response. You can use the keywords in any order.""")
 
     if conversation.correspondent:
         fragment.append(

@@ -154,6 +154,9 @@ class OpenAIInterface(LLMBase):
     @property
     def embedding_size(self) -> int:
         return self._embedding_size
+    
+    async def Close(self):
+        await self._client.close()
 
     async def _digit_completion_with_retries(self, messages: List[Message]) -> int:
         for _ in range(3):

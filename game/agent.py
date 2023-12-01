@@ -59,6 +59,8 @@ class GenAgent:
 
         awaitables = [self._memory.add_memory(memory) for memory in initial_memories]
         await asyncio.gather(*awaitables)
+        # for memory in initial_memories:
+        #     await self._memory.add_memory(memory)
 
     @property
     def uuid(self) -> UUID4:
@@ -94,7 +96,7 @@ class GenAgent:
         if isinstance(completion, Message):
             self._conversation_history.append(clean_response(self.name, completion))
             # process each message in messages
-            # completion.content = await self._processMessage(completion.content)
+            completion.content = self._processKeywords(completion.content, memories)
 
         return completion, messages
 
@@ -112,7 +114,7 @@ class GenAgent:
 
         completion = await self._llm_interface.chat_completion(messages)
         # process each message in messages
-        # completion.content = await self._processMessage(completion.content)
+        completion.content = self._processKeywords(completion.content, memories)
 
         self._conversation_history.append(clean_response(self.name, completion))
         return completion, messages
@@ -185,6 +187,22 @@ class GenAgent:
         )
 
         return rating_to_int(completion)
+    
+    def _processKeywords(
+            self, 
+            message:str,
+            memorys:List[Memory]
+        ) -> str:
+    
+        for memory in memorys:
+            if memory.keywords is None:
+                continue
+            
+            for keyword in memory.keywords:
+                if keyword in message:
+                    message = message.replace(keyword, '[keyword]' + keyword + '[/keyword]')
+
+        return message
     
     async def _processMessage(
             self,

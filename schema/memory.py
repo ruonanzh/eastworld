@@ -46,6 +46,7 @@ class Memory(BaseModel):
     """
     client_id:  Optional[str] = ""
     description: str
+    keywords: Optional[List[str]] = None
     embedding: Optional[List[float]] = None
     timestamp: Optional[GameStage] = None
 

@@ -94,12 +94,12 @@ async def lifespan(app: FastAPI):
         "github_sso": github_sso,
     }
     
-    await openai_http_client.aclose()
+    #await openai_http_client.aclose()
+    await llm.Close()
 
     if dev_mode:
         await redis_client.set("sessions", pickle.dumps(sessions))
 
-    
     await redis_client.close()
 
 def get_redis(request: Request):
