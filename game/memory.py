@@ -2,7 +2,7 @@ import logging
 from typing import Dict, List, Optional
 
 from game.ti_retriever import TIRetriever
-from llm.base import LLMBase
+from llm.openai import OpenAIInterface
 
 # from eastworld.wrappers.openai
 from schema import Memory, Message
@@ -21,11 +21,9 @@ class GenAgentMemory:
     # TODO: make LLM configurable
     def __init__(
         self,
-        llm_interface: LLMBase,
         default_num_memories_returned: int,
         retriever: TIRetriever,
     ):
-        self._llm_interface = llm_interface
         self._default_num_memories_returned = default_num_memories_returned
         self._retriever = retriever
 
@@ -34,7 +32,8 @@ class GenAgentMemory:
         if memory.importance == 0:
             memory.importance = await self._rate_importance(memory)
         if not memory.embedding:
-            memory.embedding = await self._llm_interface.embed(memory.description)
+            openAI = OpenAIInterface()
+            memory.embedding = await openAI.embed(memory.description)
 
         self._retriever.add_memory(memory)
 
@@ -55,7 +54,8 @@ class GenAgentMemory:
 
         for query in queries:
             if not query.embedding:
-                query.embedding = await self._llm_interface.embed(query.description)
+                openAI = OpenAIInterface()
+                query.embedding = await openAI.embed(query.description)
 
             top_k_for_query = self._retriever.get_relevant_memories(query, top_k)
             for memory, score in top_k_for_query:
@@ -78,4 +78,5 @@ class GenAgentMemory:
             role="user",
             content=_MEM_IMPORTANCE_TMPL.format(memory_content=memory.description),
         )
-        return (await self._llm_interface.digit_completions([[message]]))[0] + 1
+        openAI = OpenAIInterface()
+        return (await openAI.digit_completions([[message]]))[0] + 1

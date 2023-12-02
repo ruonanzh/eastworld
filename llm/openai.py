@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 import re
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Dict
 
 from openai import AsyncOpenAI
 import httpx
@@ -10,9 +10,21 @@ import httpx
 
 from llm.base import LLMBase
 from schema import ActionCompletion, Message
+from abc import ABCMeta
 
+class Singleton(ABCMeta):
+    __instances: Dict[Any, Any] = {}
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+        if cls not in cls.__instances:
+            cls.__instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls.__instances[cls]
 
-class OpenAIInterface(LLMBase):
+    @classmethod
+    def delete_all_instances(cls) -> None:
+        cls.__instances = {}
+        print("Deleted")
+
+class OpenAIInterface(LLMBase, metaclass=Singleton):
     def __init__(
         self,
         user_api_key: Optional[str] = "",
@@ -20,7 +32,7 @@ class OpenAIInterface(LLMBase):
         embedding_size: int = 1536,
         api_base: Optional[str] = None,
         client_session: Optional[httpx.AsyncClient] = None,
-    ):
+    ) -> None:
         self._model = model
         self._embedding_size = embedding_size
 

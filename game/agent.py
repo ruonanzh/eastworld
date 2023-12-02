@@ -19,7 +19,7 @@ from game.prompt_helpers import (
     get_rate_function,
     rating_to_int,
 )
-from llm.base import LLMBase
+from llm.openai import OpenAIInterface
 
 #from openai.embeddings_utils import cosine_similarity
 
@@ -30,11 +30,9 @@ class GenAgent:
     def __init__(
         self,
         knowledge: Knowledge,
-        llm_interface: LLMBase,
         memory: GenAgentMemory,
     ):
         """Should never be called directly. Use create() instead."""
-        self._llm_interface = llm_interface
         self._memory = memory
         self._conversation_history: List[Message] = []
         self._knowledge = knowledge
@@ -42,9 +40,9 @@ class GenAgent:
 
     @classmethod
     async def create(
-        cls, knowledge: Knowledge, llm_interface: LLMBase, memory: GenAgentMemory
+        cls, knowledge: Knowledge, memory: GenAgentMemory
     ):
-        agent = cls(knowledge, llm_interface, memory)
+        agent = cls(knowledge, memory)
         await agent._fill_memories()
         return agent
 
@@ -90,8 +88,10 @@ class GenAgent:
 
         self._debugMessage(messages)
 
+        openAI = OpenAIInterface()
+
         tools = generate_tools_from_actions(self._knowledge.agent_def.actions)
-        completion = await self._llm_interface.completion(messages, tools)
+        completion = await openAI.completion(messages, tools)
 
         if isinstance(completion, Message):
             self._conversation_history.append(clean_response(self.name, completion))
@@ -112,7 +112,9 @@ class GenAgent:
             self._conversation_history,
         )
 
-        completion = await self._llm_interface.chat_completion(messages)
+        openAI = OpenAIInterface()
+
+        completion = await openAI.chat_completion(messages)
         # process each message in messages
         completion.content = self._processKeywords(completion.content, memories)
 
@@ -135,8 +137,10 @@ class GenAgent:
         )
         functions = generate_functions_from_actions(self._knowledge.agent_def.actions)
 
+        openAI = OpenAIInterface()
+
         return (
-            await self._llm_interface.action_completion(messages, functions),
+            await openAI.action_completion(messages, functions),
             messages,
         )
 
@@ -157,9 +161,9 @@ class GenAgent:
         )
 
         functions = [get_rate_function()]
-
+        openAI = OpenAIInterface()
         awaitables = [
-            self._llm_interface.action_completion(msgs, functions)
+            openAI.action_completion(msgs, functions)
             for msgs in query_messages
         ]
         ratings = await asyncio.gather(*awaitables)
@@ -182,7 +186,8 @@ class GenAgent:
         )
 
         functions = [get_rate_function()]
-        completion = await self._llm_interface.action_completion(
+        openAI = OpenAIInterface()
+        completion = await openAI.action_completion(
             query_messages[0], functions
         )
 
@@ -222,7 +227,8 @@ class GenAgent:
             logger = logging.getLogger()
             logger.debug('Sentence:' + msg)
             #get embed of this msg from llm
-            msg_embed = await self._llm_interface.embed(msg)
+            openAI = OpenAIInterface()
+            msg_embed = await openAI.embed(msg)
 
             retrived_memories:List[Memory] = []
             retrived_memories = await self._memory.retrieve_relevant_memories(
@@ -233,7 +239,7 @@ class GenAgent:
             for memory in retrived_memories:
 
                 if memory.embedding is None:
-                    memory.embedding = await self._llm_interface.embed(memory.description)
+                    memory.embedding = await openAI.embed(memory.description)
 
                 similarity = self._cosineSimilarity(memory.embedding, msg_embed)
                 distance = self._distanceFromEmbedding(memory.embedding, msg_embed)

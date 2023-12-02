@@ -141,12 +141,11 @@ async def create_session(
         )
 
         memory = GenAgentMemory(
-            llm,
             memory_config.memories_returned,
             TIRetriever(memory_config),
         )
 
-        awaitable_agents.append(GenAgent.create(knowledge, llm, memory))
+        awaitable_agents.append(GenAgent.create(knowledge, memory))
         #agents.append(await GenAgent.create(knowledge, llm, memory))
 
     agents = await asyncio.gather(*awaitable_agents)
