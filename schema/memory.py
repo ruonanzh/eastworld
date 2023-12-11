@@ -40,6 +40,7 @@ class MemoryConfig(BaseModel):
 
 class Memory(BaseModel):
     importance: int = 0
+    isPersenal: bool = False
     """ 
     A number from 1-10 indicating the importance of the memory. An importance of 0 
     means importance will be determined by the LLM.

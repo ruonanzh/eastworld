@@ -53,12 +53,13 @@ class GenAgent:
             if self._knowledge.agent_def.uuid in lore.known_by
         ]
 
+        for memory in self._knowledge.agent_def.personal_lore:
+            memory.isPersenal = True
+
         initial_memories += self._knowledge.agent_def.personal_lore
 
         awaitables = [self._memory.add_memory(memory) for memory in initial_memories]
         await asyncio.gather(*awaitables)
-        # for memory in initial_memories:
-        #     await self._memory.add_memory(memory)
 
     @property
     def uuid(self) -> UUID4:
@@ -284,10 +285,10 @@ class GenAgent:
     
     def _debugMessage(self, msg:List[Message]):
         logger = logging.getLogger()
-        logger.debug("GPT Message:")
+        logger.info("GPT Message:")
         for m in msg:
-            logger.debug("Role:" + m.role)
-            logger.debug("Content:" + m.content)
+            logger.info("Role:" + m.role)
+            logger.info("Content:" + m.content)
 
     def startConversation(
         self,

@@ -68,8 +68,8 @@ class GenAgentMemory:
         vals.sort(key=lambda x: -x[1])
 
         logger = logging.getLogger()
-        logger.debug("Pulled memories: \n")
-        logger.debug("\n".join([f"{desc}: {val}" for desc, val in vals]))
+        logger.info("Pulled memories: \n")
+        logger.info("\n".join([f"{desc}: {val}" for desc, val in vals]))
 
         return [memory_desc_to_memory[desc] for desc, _ in vals[:top_k]]
 
